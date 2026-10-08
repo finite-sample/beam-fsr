@@ -1,0 +1,9 @@
+# object_usage_linter is off: it cannot follow source(), which is how these
+# scripts share functions, so every cross-file call is a false positive.
+# object_name_linter is off: S, Q and B follow the maths notation.
+linters: linters_with_defaults(
+    line_length_linter(100),
+    object_name_linter = NULL,
+    object_usage_linter = NULL
+  )
+exclusions: list("renv")
