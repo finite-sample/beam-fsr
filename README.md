@@ -31,7 +31,7 @@ Averaging the good models that a search turns up is old. I found no paper doing 
 |---|---|---|---|
 | Madigan & Raftery (1994), Occam's window; `BMA::bicreg` | `leaps` exhaustive, or their up/down search | Yes, BIC weights | Not forward stepwise. `bicreg` is capped at about 30 predictors. Included as a baseline. |
 | Hans, Dobra & West (2007), shotgun stochastic search | Stochastic add / delete / swap moves | Yes, posterior weights | Stochastic search, not a beam; Bayesian weights |
-| Granger & Jeon (2004), thick modelling | None | Yes, trimmed mean of the top models | No search |
+| Granger & Jeon (2004), thick modeling | None | Yes, trimmed mean of the top models | No search |
 | Elliott, Gargano & Timmermann (2013), complete subset regressions | None: all `k`-subsets | Yes, equal weights | No search. Included as a baseline. |
 | Feng & Liu (2020), nested model averaging on the solution path | Lasso / SLOPE path | Yes, across sizes on one path | Lists "step-wise regression, forward regression" as future work |
 | Beam search for feature selection (arXiv 2203.04350); OKRidge (Liu et al. 2023) | Forward beam | No, best member only | No averaging |
