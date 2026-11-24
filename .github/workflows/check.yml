@@ -24,7 +24,7 @@ jobs:
           # bestsubset installs from GitHub; unauthenticated API calls get throttled.
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       - name: Tests
-        run: Rscript tests/test_methods.R
+        run: for f in tests/test_*.R; do Rscript "$f"; done
       - name: Lint
         run: |
           Rscript -e 'install.packages("lintr")'

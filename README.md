@@ -98,12 +98,12 @@ At p = 100 only coefficient pattern 1 was run, because the p = 100 grid takes ab
 
 ```sh
 Rscript -e 'renv::restore()'
-Rscript tests/test_methods.R
+for f in tests/test_*.R; do Rscript "$f"; done
 Rscript R/run.R 100 results/raw 20
 Rscript R/run.R 50 results/raw 100   # the README reports coefficient pattern 1 cells only
 Rscript R/report.R
 ```
 
-`R/methods.R` holds the estimators, `R/sim.R` one replication, `R/run.R` the grid (one checkpoint file per cell), and `R/report.R` the tables, figure and the results block above.
+`R/methods.R` holds the estimators, `R/sim.R` one replication and one grid cell (replication r always uses the r-th random-number stream, so results do not depend on the core count), `R/run.R` the grid (one checkpoint file per cell), and `R/report.R` the tables, figure and the results block above.
 
 The previous version of this repo (a Python notebook) chose variables by their test-set error and reported that same error. It has been removed; it is in the git history.

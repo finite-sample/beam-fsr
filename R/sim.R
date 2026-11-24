@@ -36,3 +36,19 @@ one_rep <- function(n, p, rho, snr, beta_type, width = 10, B = 50,
   }
   out
 }
+
+# All replications of one grid cell. Replication r always draws from the r-th
+# L'Ecuyer-CMRG stream after set.seed(seed), whichever worker runs it, so the
+# results do not depend on the number of cores. (mclapply's own seeding gives
+# each worker one stream, so a replication's data would depend on which
+# worker it landed on.)
+run_cell <- function(g, reps, seed, cores, ...) {
+  set.seed(seed, kind = "L'Ecuyer-CMRG")
+  streams <- Reduce(function(s, r) parallel::nextRNGStream(s), seq_len(reps),
+                    accumulate = TRUE, .Random.seed)[-1]
+  res <- parallel::mclapply(seq_len(reps), function(r) {
+    assign(".Random.seed", streams[[r]], envir = globalenv())
+    suppressWarnings(one_rep(g$n, g$p, g$rho, g$snr, g$beta_type, ...))
+  }, mc.cores = cores)
+  cbind(g, rep = seq_len(reps), do.call(rbind, res))
+}

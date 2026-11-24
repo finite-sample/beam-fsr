@@ -59,6 +59,56 @@ brute <- rowMeans(apply(combn(6, 2), 2, function(S) {
 }))
 stopifnot(isTRUE(all.equal(cs[, 3], brute, tolerance = 1e-8)))
 
+# Highly correlated columns: an AR(1) design with rho = 0.99, and one with
+# near-duplicate column pairs. beam_path updates its projections one column
+# at a time; the reference below scores every candidate with a fresh lm.fit,
+# applies the same collinearity rule and drops duplicate subsets the same way.
+beam_ref <- function(x, y, width, tol = 1e-8) {
+  rss_of <- function(S, v) sum(lm.fit(cbind(1, x[, S, drop = FALSE]), v)$residuals^2)
+  ss0 <- colSums(sweep(x, 2, colMeans(x))^2)
+  beam <- list(integer(0))
+  out <- list(beams = list(), rss = sum((y - mean(y))^2))
+  for (k in seq_len(ncol(x))) {
+    cand <- list()
+    for (S in beam) for (j in setdiff(seq_len(ncol(x)), S)) {
+      if (rss_of(S, x[, j]) > tol * ss0[j]) cand <- c(cand, list(sort(c(S, j))))
+    }
+    if (!length(cand)) break
+    cand <- cand[!duplicated(vapply(cand, paste, "", collapse = ","))]
+    score <- vapply(cand, rss_of, 0, v = y)
+    o <- order(score)[seq_len(min(width, length(cand)))]
+    beam <- cand[o]
+    out$beams[[k]] <- beam
+    out$rss[k + 1] <- score[o[1]]
+  }
+  out
+}
+set.seed(12)
+d <- sim.xy(100, 10, 1, rho = 0.99, snr = 6, beta.type = 2)
+near <- sim.xy(100, 10, 1, rho = 0.5, snr = 6, beta.type = 2)
+near$x[, 2] <- near$x[, 1] + 1e-3 * rnorm(100)
+near$x[, 6] <- near$x[, 5] + 1e-5 * rnorm(100)
+for (dd in list(d, near)) for (w in c(1, 4)) {
+  got <- beam_path(dd$x, dd$y, w)
+  want <- beam_ref(dd$x, dd$y, w)
+  stopifnot(identical(got$beams, want$beams))
+  stopifnot(isTRUE(all.equal(got$rss[!is.na(got$rss)], want$rss, tolerance = 1e-10)))
+}
+
+# Complete subset regression fits most subsets by Cholesky and falls back to
+# QR when the subset is ill conditioned. With a pair of columns 1e-2 apart
+# (Cholesky path) and 1e-7 apart (QR path, where Cholesky alone was off by
+# about 1e-3), every size must match lm.fit over the same enumerated subsets.
+for (eps in c(1e-2, 1e-7)) {
+  dd <- sim.xy(100, 8, 1, rho = 0.5, snr = 6, beta.type = 2)
+  dd$x[, 2] <- dd$x[, 1] + eps * rnorm(100)
+  cs <- csr_path(dd$x, dd$y)
+  for (k in 1:6) {
+    brute <- rowMeans(apply(combn(8, k), 2, function(S) ols_coef(dd$x, dd$y, S, 8)))
+    stopifnot(isTRUE(all.equal(cs[, k + 1], brute, tolerance = 1e-9)))
+  }
+}
+
 # Bootstrap designs with p close to n are rank deficient: no error, and the
 # path stops before the residual degrees of freedom run out.
 d <- sim.xy(60, 50, 1, snr = 1)
